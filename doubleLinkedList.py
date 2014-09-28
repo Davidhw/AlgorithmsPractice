@@ -1,27 +1,33 @@
-class doublyLinkedList():
+class doubleLinkedList():
+
     def __init__(self,key = None,prev=None,next=None):
         self.next = next
         self.prev = prev
         self.key = key
 
     def add(self,key):
-        element = doublyLinkedList(key,self,self.next)
+        element = doubleLinkedList(key,self,self.next)
         if self.next:
             self.next.prev = element
         self.next = element
 
     def getByIndex(self,index):
-        currentElement = self.next
-        for i in range(index-1):
+        currentElement = self
+        for i in range(index):
             currentElement = currentElement.next
         return currentElement
-
     def deleteByIndex(self,index):
         elementToDelete = self.getByIndex(index)
-        elementToDelete.prev.next  = elementToDelete.next
-        elementToDelete.next.prev = elementToDelete.prev
-    def deleteByKey(self,key):
-        self.deleteByIndex(self.search(key))
+        if elementToDelete.prev:
+            elementToDelete.prev.next  = elementToDelete.next
+        if elementToDelete.next:
+            elementToDelete.next.prev = elementToDelete.prev
+    def deleteByKey(self,key,searchIncrementor=None,deleteIncrementor=None):
+        index = self.search(key,searchIncrementor)
+        if index!=-1:
+            if deleteIncrementor:
+                deleteIncrementor.inc()
+            self.deleteByIndex(index)
 
 
     def toString(self):
@@ -32,10 +38,14 @@ class doublyLinkedList():
             currentElement = currentElement.next
         return listToString
 
-    def search(self,key):
+    def search(self,key,incrementor=None):
         currentElement = self
         i = 0
         while currentElement != None:
+            # keeps track of number of comparisons
+            if incrementor:
+                incrementor.inc()
+
             if currentElement.key == key:
                 return i
             else:
@@ -43,7 +53,7 @@ class doublyLinkedList():
                 i+=1
         return -1
 """
-head = doublyLinkedList()
+head = doubleLinkedList()
 head.add(8)
 head.add(3)
 head.add(4)
