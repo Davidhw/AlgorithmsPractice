@@ -51,16 +51,9 @@ def moveTop(moveFrom,moveTo):
         moveTo.push(moveFrom.pop())
     else:
         print "can't move the top of an empty stack"
-    
-stack1 = RingStack(1)
-stack2 = RingStack(2)
-stack3 = RingStack(3)
 
-numberOfRings = random.randint(1,20)
-for num in reversed(range(numberOfRings)):
-    stack1.push(Ring(num+1))
-
-# using only moveTop, move the rings from stack1 to stack3
+# using only moveTop, move the rings from stack1 to stack3    
+# SOLUTION
 def move(sourceStack, destStack, intermediateStack, numberOfRings):
     if numberOfRings ==1:
         moveTop(sourceStack,destStack)
@@ -71,6 +64,16 @@ def move(sourceStack, destStack, intermediateStack, numberOfRings):
         move(sourceStack, destStack, intermediateStack, 1)
         # move the ones that were above the bottom one to the destination stack
         move(intermediateStack, destStack, sourceStack, numberOfRings-1)
+
+# RUN SOLUTION
+stack1 = RingStack(1)
+stack2 = RingStack(2)
+stack3 = RingStack(3)
+
+numberOfRings = random.randint(1,20)
+for num in reversed(range(numberOfRings)):
+    stack1.push(Ring(num+1))
+
 
 printState()
 move(stack1, stack3, stack2, stack1.size())
