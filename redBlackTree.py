@@ -182,14 +182,15 @@ class RBNode(Node):
                 sibling.right.rotate()
         
         # case six: s is black, silbing's child farthest from self is red
-        sibling = self.sibling()
-        if isBlack(sibling) and sibling:
-            if (self == self.parent.left and sibling.right.color == RED) or (self == self.parent.right and sibling.left.color == RED):
-                sibling.rotate() 
-                sibling = self.parent.sibling()
-                if sibling:
-                    sibling.color = BLACK
-                
+        silbing = self.sibling()
+        if self == self.parent.left:
+            if sibling and sibling.right:
+                sibling.right.color = BLACK
+                sibling.rotate()
+        else:
+            if sibling and sibling.left:
+                sibling.left.color = BLACK
+                sibling.rotate()
 
     def fixInsertion(self):
         #(cases as outlined on wikipedia)
@@ -238,8 +239,8 @@ class RBNode(Node):
     
     def insertKeyAndGetRoot(self,key):
         return self.insertKey(key).getRoot()
-
-import pdb
+'''
+#import pdb
 root = RBNode(10,BLACK)
 
 
@@ -262,7 +263,6 @@ root = root.insertKeyAndGetRoot(100)
 root = root.insertKeyAndGetRoot(-4)
 root.printTree()
 #pdb.set_trace()
-pdb.set_trace()
 root.deleteKey(14)
 root.printTree()
 root.deleteKey(-1)
@@ -278,4 +278,4 @@ root.deleteKey(7)
 root.printTree()
 root.deleteKey(91)
 root.printTree()
-
+'''
