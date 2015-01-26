@@ -1,5 +1,3 @@
-
-
 data BST a = NULL | Node (BST a) a (BST a)
      deriving (Show,Eq)
 
@@ -42,11 +40,11 @@ deleteKey :: Ord a => a -> BST a -> BST a
 deleteKey _ NULL = NULL
 deleteKey dKey (Node left currentKey right)
 	  | dKey == currentKey = deleteNode (Node left currentKey right)
-	  | dKey < currentKey = deleteKey dKey left
-	  | dKey > currentKey = deleteKey dKey right
+	  | dKey < currentKey = (Node (deleteKey dKey left) currentKey right)
+	  | dKey > currentKey = (Node left currentKey (deleteKey dKey right))
 
 
--- deleteNode :: Ord a => BST a -> BST a
+deleteNode :: Ord a => BST a -> BST a
 deleteNode (Node left _ NULL) = left
 deleteNode (Node NULL _ right) = right
 deleteNode (Node left _ right) = (Node left newKey (deleteKey newKey right)) where newKey = minKey(right)
