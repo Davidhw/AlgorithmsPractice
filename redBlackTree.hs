@@ -2,11 +2,16 @@
 -- https://wiki.rice.edu/confluence/download/attachments/2761212/Okasaki-Red-Black.pdf
 -- http://matt.might.net/articles/red-black-delete/
 
-data RBT a = NULL | Node Color (RBT a) a (RBT a)
+data RBT a = DBNULL| NULL | Node Color (RBT a) a (RBT a)
      deriving (Show,Eq)
 
 data Color = DB|B|R|NB
      deriving (Show, Eq)
+
+isBB :: RBT a -> Bool
+isBB DBNULL = True
+isBB (Node DB a x b) = True
+isBB _ = False
 
 blacker :: Color -> Color
 blacker NB = R
@@ -21,7 +26,13 @@ redder R = NB
 redder NB = error "can't make a negative black redder"
 
 blacken :: RBT a -> RBT a
+blacken NULL = DBNULL
 blacken (Node color a x b) = Node (blacker color) a x b
+
+redden :: RBT a -> RBT a
+redden DBNULL = NULL
+redden (Node color a x b) = Node (redder color) a x b
+
 
 key :: Ord a => RBT a -> a
 key (Node color _ a _) =  a
@@ -41,20 +52,31 @@ insert :: Ord a  => a -> RBT a -> RBT a
 insert newKey tree = blacken (ins tree)
        where ins NULL = Node R NULL newKey NULL
        	     ins (Node color left currentKey right)
-       	     	 |newKey <= currentKey = fixInsert (Node color (ins left) currentKey right)
-       	   	 | newKey > currentKey = fixInsert (Node color left currentKey (ins right))
+       	     	 |newKey <= currentKey = balance (Node color (ins left) currentKey right)
+       	   	 | newKey > currentKey = balance (Node color left currentKey (ins right))
 
-fixInsert :: Ord a => RBT a -> RBT a
+balance :: Ord a => RBT a -> RBT a
 
 -- keys are x,yz
 -- children are a,b,c,d
 -- alphabetic order is in increasing order
+-- fixInsert
+balance (Node B (Node R (Node R a x b) y c) z d) = Node R (Node B a x b) y (Node B c z d)
+balance (Node B (Node R a x (Node R b y c)) z d) = Node R (Node B a x b) y (Node B c z d)
+balance (Node B a x (Node R b y (Node R c z d))) = Node R (Node B a x b) y (Node B c z d)
+balance (Node B a x (Node R (Node R b y c) z d)) = Node R (Node B a x b) y (Node B c z d)
+balance (Node color a x b) = Node color a x b 
 
-fixInsert (Node B (Node R (Node R a x b) y c) z d) = Node R (Node B a x b) y (Node B c z d)
-fixInsert (Node B (Node R a x (Node R b y c)) z d) = Node R (Node B a x b) y (Node B c z d)
-fixInsert (Node B a x (Node R b y (Node R c z d))) = Node R (Node B a x b) y (Node B c z d)
-fixInsert (Node B a x (Node R (Node R b y c) z d)) = Node R (Node B a x b) y (Node B c z d)
-fixInsert (Node color a x b) = Node color a x b 
+-- fixBubble
+-- fix double black root
+balance (Node DB (Node R a x (Node R b y c)) z d) = Node B (Node B a x b) y (Node B c z d)
+balance (Node DB (Node R (Node R a x b) y c) z d) = Node B (Node B a x b) y (Node B c z d)
+balance (Node DB a x (Node R (Node R b y c) z d)) = Node B (Node B a x b) y (Node B c z d)
+balance (Node DB a x (Node R b y (Node R c z d))) = Node B (Node B a x b) y (Node B c z d)
+
+-- fixNegaive black
+balance (Node DB (Node NB (Node B a w b) x (Node B c y d)) z e) = Node B (Node B (balance(Node R a w b)) x c) y (Node B d z e)
+balance (Node DB a z (Node NB (Node B b w c) x (Node B d y e ))) = Node B(Node B a z b) w (Node B c x (balance(Node R d y e)))
 
 search :: Ord a => a -> RBT a -> RBT a
 search searchKey NULL = NULL
@@ -77,9 +99,9 @@ deleteKey dKey (Node color left currentKey right)
 
 
 deleteNode :: Ord a => RBT a -> RBT a
-deleteNode (Node color left _ NULL) = left
-deleteNode (Node color NULL _ right) = right
-deleteNode (Node color left _ right) = (Node color left newKey (deleteKey newKey right)) where newKey = minKey(right)
+deleteNode (Node color left _ NULL) = (blacken left)
+deleteNode (Node color NULL _ right) = (blacken right)
+deleteNode (Node color left _ right) = (Node (blacker color) left newKey (deleteKey newKey right)) where newKey = minKey(right)
 
 inOrderList :: Ord a => RBT a -> [a]
 inOrderList NULL = []
@@ -93,3 +115,7 @@ height :: Ord a => RBT a -> Integer
 height NULL = 0
 height (Node color left _ right) = 1 + (max (height left) (height right))
 
+bubble :: Ord a => RBT a -> RBT a
+bubble (Node color a x b)
+       |isBB a || isBB b = balance (Node (blacker color) (redden a) x (redden b))
+       | otherwise = balance (Node color a x b)
