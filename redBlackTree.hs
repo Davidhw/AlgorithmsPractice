@@ -27,7 +27,7 @@ redder NB = error "can't make a negative black redder"
 
 blacken :: RBT a -> RBT a
 blacken NULL = DBNULL
-blacken (Node color a x b) = Node (blacker color) a x b
+blacken (Node color a x b) = Node B a x b
 
 redden :: RBT a -> RBT a
 redden DBNULL = NULL
@@ -94,8 +94,8 @@ deleteKey :: Ord a => a -> RBT a -> RBT a
 deleteKey _ NULL = NULL
 deleteKey dKey (Node color left currentKey right)
 	  | dKey == currentKey = deleteNode (Node color left currentKey right)
-	  | dKey < currentKey = (Node color (deleteKey dKey left) currentKey right)
-	  | dKey > currentKey = (Node color left currentKey (deleteKey dKey right))
+	  | dKey < currentKey = bubble (Node color (deleteKey dKey left) currentKey right)
+	  | dKey > currentKey = bubble (Node color left currentKey (deleteKey dKey right))
 
 
 deleteNode :: Ord a => RBT a -> RBT a
@@ -119,3 +119,14 @@ bubble :: Ord a => RBT a -> RBT a
 bubble (Node color a x b)
        |isBB a || isBB b = balance (Node (blacker color) (redden a) x (redden b))
        | otherwise = balance (Node color a x b)
+
+
+
+checkInvariantTwo :: RBT a -> Bool
+checkInvariantTwo NULL = True
+checkInvariantTwo (Node R (Node R a x b) y (Node B c z d)) = False
+checkInvariantTwo (Node R (Node B a x b) y (Node R c z d)) = False
+checkInvariantTwo (Node R (Node R a x b) y (Node R c z d)) = False
+checkInvariantTwo (Node _ l x r) = (checkInvariantTwo l) && (checkInvariantTwo r) 
+
+-- checkInvariantTwo (deleteKey 6 (createFromList[50,32,2,4,3,5,6,100,99,110,111,112]))
