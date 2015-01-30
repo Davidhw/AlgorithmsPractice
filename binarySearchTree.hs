@@ -1,9 +1,6 @@
 data BST a = NULL | Node (BST a) a (BST a)
      deriving (Show,Eq)
 
-root :: Ord a => BST a -> a
-root (Node _ a _) =  a
-
 key :: Ord a => BST a -> a
 key (Node _ k _) = k
 
