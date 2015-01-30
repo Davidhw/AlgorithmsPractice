@@ -1,3 +1,5 @@
+# based on en.wikipedia.org/wiki/Red–black_tree and http://stromberg.dnsalias.org/~strombrg/red-black-tree-mod/ (mainly their way of handling rotates)
+
 from binarySearchTree import Node, getKeysInOrder
 
 RED = True
