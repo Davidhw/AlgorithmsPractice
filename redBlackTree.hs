@@ -2,8 +2,6 @@
 -- https://wiki.rice.edu/confluence/download/attachments/2761212/Okasaki-Red-Black.pdf
 -- http://matt.might.net/articles/red-black-delete/
 
-import Debug.Trace
-
 data RBT a = DBNULL| NULL | Node Color (RBT a) a (RBT a)
      deriving (Show,Eq)
 
