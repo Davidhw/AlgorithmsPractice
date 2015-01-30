@@ -2,16 +2,18 @@
 -- https://wiki.rice.edu/confluence/download/attachments/2761212/Okasaki-Red-Black.pdf
 -- http://matt.might.net/articles/red-black-delete/
 
+import Debug.Trace
+
 data RBT a = DBNULL| NULL | Node Color (RBT a) a (RBT a)
      deriving (Show,Eq)
 
 data Color = DB|B|R|NB
      deriving (Show, Eq)
 
-isBB :: RBT a -> Bool
-isBB DBNULL = True
-isBB (Node DB a x b) = True
-isBB _ = False
+isDB :: Ord a => RBT a -> Bool
+isDB DBNULL = True
+isDB (Node DB a x b) = True
+isDB _ = False
 
 blacker :: Color -> Color
 blacker NB = R
@@ -25,14 +27,14 @@ redder B = R
 redder R = NB
 redder NB = error "can't make a negative black redder"
 
-blacken :: RBT a -> RBT a
-blacken NULL = DBNULL
+redderAcceptsLeaf :: RBT a -> RBT a
+redderAcceptsLeaf DBNULL = NULL
+redderAcceptsLeaf (Node color left key right) = Node (redder color) left key right
+
+blacken :: Ord a => RBT a -> RBT a
+blacken NULL = NULL
+blacken DBNULL = DBNULL
 blacken (Node color a x b) = Node B a x b
-
-redden :: RBT a -> RBT a
-redden DBNULL = NULL
-redden (Node color a x b) = Node (redder color) a x b
-
 
 key :: Ord a => RBT a -> a
 key (Node color _ a _) =  a
@@ -65,18 +67,19 @@ balance (Node B (Node R (Node R a x b) y c) z d) = Node R (Node B a x b) y (Node
 balance (Node B (Node R a x (Node R b y c)) z d) = Node R (Node B a x b) y (Node B c z d)
 balance (Node B a x (Node R b y (Node R c z d))) = Node R (Node B a x b) y (Node B c z d)
 balance (Node B a x (Node R (Node R b y c) z d)) = Node R (Node B a x b) y (Node B c z d)
-balance (Node color a x b) = Node color a x b 
 
 -- fixBubble
 -- fix double black root
 balance (Node DB (Node R a x (Node R b y c)) z d) = Node B (Node B a x b) y (Node B c z d)
-balance (Node DB (Node R (Node R a x b) y c) z d) = Node B (Node B a x b) y (Node B c z d)
+balance (Node DB (Node R (Node R a x b) y c) z d) = Node B (Node B a x b) y (Node B c z d)	
 balance (Node DB a x (Node R (Node R b y c) z d)) = Node B (Node B a x b) y (Node B c z d)
 balance (Node DB a x (Node R b y (Node R c z d))) = Node B (Node B a x b) y (Node B c z d)
 
 -- fixNegaive black
 balance (Node DB (Node NB (Node B a w b) x (Node B c y d)) z e) = Node B (Node B (balance(Node R a w b)) x c) y (Node B d z e)
 balance (Node DB a z (Node NB (Node B b w c) x (Node B d y e ))) = Node B(Node B a z b) w (Node B c x (balance(Node R d y e)))
+
+balance (Node color a x b) = Node color a x b 
 
 search :: Ord a => a -> RBT a -> RBT a
 search searchKey NULL = NULL
@@ -92,16 +95,20 @@ minKey (Node color left currentKey right) = minKey left
 
 deleteKey :: Ord a => a -> RBT a -> RBT a      
 deleteKey _ NULL = NULL
-deleteKey dKey (Node color left currentKey right)
-	  | dKey == currentKey = deleteNode (Node color left currentKey right)
-	  | dKey < currentKey = bubble (Node color (deleteKey dKey left) currentKey right)
-	  | dKey > currentKey = bubble (Node color left currentKey (deleteKey dKey right))
+deleteKey dKey (Node color left currentKey right) = delKey (Node color left currentKey right)
+--	  where delKey NULL = NULL
+	  where delKey (Node c le x ri)	  
+	  	  | dKey == x = deleteNode (Node c le x ri)
+		  | dKey <  x = bubble (Node c (delKey le) x ri)
+		  | dKey >  x = bubble (Node c le x (delKey ri))
 
 
 deleteNode :: Ord a => RBT a -> RBT a
-deleteNode (Node color left _ NULL) = (blacken left)
-deleteNode (Node color NULL _ right) = (blacken right)
-deleteNode (Node color left _ right) = (Node (blacker color) left newKey (deleteKey newKey right)) where newKey = minKey(right)
+deleteNode (Node R NULL _ NULL) = NULL
+deleteNode (Node B NULL _ NULL) = DBNULL
+deleteNode (Node B (Node R a x b) _ NULL) = Node B a x b
+deleteNode (Node B NULL _ (Node R a x b)) = Node B a x b
+deleteNode (Node color left _ right) = bubble (Node color left newKey (deleteKey newKey right)) where newKey = minKey(right)
 
 inOrderList :: Ord a => RBT a -> [a]
 inOrderList NULL = []
@@ -117,16 +124,30 @@ height (Node color left _ right) = 1 + (max (height left) (height right))
 
 bubble :: Ord a => RBT a -> RBT a
 bubble (Node color a x b)
-       |isBB a || isBB b = balance (Node (blacker color) (redden a) x (redden b))
+       |isDB a || isDB b = balance (Node (blacker color) (redderAcceptsLeaf a) x (redderAcceptsLeaf b))
        | otherwise = balance (Node color a x b)
 
 
 
-checkInvariantTwo :: RBT a -> Bool
+checkInvariantTwo :: Ord a => RBT a -> Bool
 checkInvariantTwo NULL = True
 checkInvariantTwo (Node R (Node R a x b) y (Node B c z d)) = False
 checkInvariantTwo (Node R (Node B a x b) y (Node R c z d)) = False
 checkInvariantTwo (Node R (Node R a x b) y (Node R c z d)) = False
 checkInvariantTwo (Node _ l x r) = (checkInvariantTwo l) && (checkInvariantTwo r) 
 
+distToBottomList :: (Ord a) => RBT a -> Int -> [Int]
+distToBottomList (Node B l x r ) dist = (distToBottomList l (dist+1)) ++  (distToBottomList r (dist+1))
+distToBottomList (Node R l x r ) dist = (distToBottomList l (dist)) ++  (distToBottomList r (dist))
+distToBottomList NULL dist = [dist ]
+
+
+checkInvariantOne :: Ord a => RBT a -> Bool
+checkInvariantOne tree = all (== head nums) nums where 
+		  nums = distToBottomList tree 0 
+
+checkInvariants :: Ord a => RBT a -> Bool
+checkInvariants tree = (checkInvariantOne tree) && (checkInvariantTwo tree)
 -- checkInvariantTwo (deleteKey 6 (createFromList[50,32,2,4,3,5,6,100,99,110,111,112]))
+
+-- checkInvariants (deleteKey 32 (insert 1001 (deleteKey 5 (deleteKey 6 (createFromList [32,5,100,2,50,6,3233])))))
